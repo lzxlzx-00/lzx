@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 手机端核心适配配置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>致郑老师的新年祝福</title>
+    <style>
+        /* 全局样式重置 - 适配手机触摸交互 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* 去掉手机点击高亮 */
+        }
+
+        /* 页面整体样式 - 适配手机全屏 */
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif; /* 适配iOS/安卓字体 */
+            background-color: #000;
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden;
+            touch-action: none; /* 禁止手机触摸缩放 */
+        }
+
+        /* 烟花容器 - 适配手机全屏 */
+        .fireworks-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 祝福文字容器 - 手机端优化 */
+        .blessing-text {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            padding: 0 15px;
+            /* 文字渐入动画 - 适配手机性能 */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1.5s ease-out forwards;
+            animation-delay: 5s;
+            -webkit-animation: fadeIn 1.5s ease-out forwards; /* 兼容iOS */
+            -webkit-animation-delay: 5s;
+        }
+
+        /* 核心祝福语 - 手机端字体优化 */
+        h1 {
+            color: #ff3333;
+            font-size: clamp(2rem, 10vw, 3.5rem); /* 手机端更适配的字体尺寸 */
+            text-align: center;
+            line-height: 1.2;
+            text-shadow: 0 0 10px #ff3333, 0 0 20px #ff6666, 0 0 30px #ff9999;
+            -webkit-text-stroke: 0.5px #fff; /* iOS文字描边增强可读性 */
+        }
+
+        /* 渐入动画 - 增加webkit前缀兼容iOS */
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @-webkit-keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 针对小屏手机的额外优化 */
+        @media (max-width: 375px) {
+            .blessing-text {
+                padding: 0 10px;
+            }
+            h1 {
+                font-size: clamp(1.8rem, 10vw, 3rem);
+            }
+        }
+
+        /* 针对全面屏手机的适配 */
+        @supports (padding: max(0px)) {
+            body {
+                padding: max(10px, env(safe-area-inset-top), env(safe-area-inset-bottom));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 烟花容器 -->
+    <div class="fireworks-container" id="fireworks"></div>
+
+    <!-- 核心祝福语 -->
+    <div class="blessing-text">
+        <h1>郑老师新年快乐呀！</h1>
+    </div>
+
+    <!-- 烟花脚本 - 手机性能优化版 -->
+    <script>
+        // 适配手机性能 - 降低低端机卡顿
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const particleCountMobile = isMobile ? 60 : 130; // 手机端减少粒子数量
+        const fireworkIntervalMobile = isMobile ? 800 : 500; // 手机端降低烟花生成频率
+
+        // 烟花粒子类
+        class Firework {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.particles = [];
+                this.createParticles();
+            }
+
+            // 创建烟花粒子 - 手机端优化
+            createParticles() {
+                const particleCount = Math.floor(Math.random() * 30) + particleCountMobile;
+                const colors = ['#ff0000', '#ff9900', '#ffff00', '#00ff00', '#0099ff', '#9900ff', '#ff00ff'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * (isMobile ? 4 : 5) + 2; // 手机端降低粒子速度
+                    this.particles.push({
+                        x: this.x,
+                        y: this.y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        alpha: 1,
+                        color: color,
+                        gravity: 0.04, // 降低重力，减少计算量
+                        decay: Math.random() * 0.008 + 0.005
+                    });
+                }
+            }
+
+            update() {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.vy += p.gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= p.decay;
+
+                    if (p.alpha <= 0) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+                return this.particles.length > 0;
+            }
+
+            draw(ctx) {
+                this.particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, isMobile ? 1.5 : 2, 0, Math.PI * 2); // 手机端缩小粒子尺寸
+                    ctx.fillStyle = `${p.color}${Math.floor(p.alpha * 255).toString(16).padStart(2, '0')}`;
+                    ctx.fill();
+                });
+            }
+        }
+
+        // 初始化烟花画布 - 适配手机屏幕
+        function initFireworks() {
+            const container = document.getElementById('fireworks');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 适配手机屏幕尺寸
+            function resizeCanvas() {
+                const w = window.innerWidth || document.documentElement.clientWidth;
+                const h = window.innerHeight || document.documentElement.clientHeight;
+                canvas.width = w;
+                canvas.height = h;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 解决手机Canvas模糊问题
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            canvas.width *= dpr;
+            canvas.height *= dpr;
+            ctx.scale(dpr, dpr);
+            
+            container.appendChild(canvas);
+
+            let fireworks = [];
+            let lastFireworkTime = 0;
+
+            // 动画循环 - 优化手机性能
+            function animate(timestamp) {
+                // 降低重绘频率，减少卡顿
+                if (timestamp - lastFireworkTime > Math.random() * 800 + fireworkIntervalMobile) {
+                    const x = Math.random() * canvas.width / dpr;
+                    const y = Math.random() * (canvas.height / dpr * 0.8);
+                    fireworks.push(new Firework(x, y));
+                    lastFireworkTime = timestamp;
+                }
+
+                // 半透明背景，保留拖影但降低绘制复杂度
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                // 分批更新烟花，避免一次性计算过多
+                const batchSize = isMobile ? 5 : 10;
+                let processed = 0;
+                for (let i = fireworks.length - 1; i >= 0 && processed < batchSize; i--) {
+                    const fw = fireworks[i];
+                    if (!fw.update()) {
+                        fireworks.splice(i, 1);
+                    } else {
+                        fw.draw(ctx);
+                    }
+                    processed++;
+                }
+
+                // 手机端缩短烟花播放时间，减少性能消耗
+                const playTime = isMobile ? 7000 : 8000;
+                if (timestamp < playTime) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // 确保页面完全加载后再初始化，避免手机端加载异常
+        window.addEventListener('DOMContentLoaded', function() {
+            // 延迟初始化，给手机浏览器足够的渲染时间
+            setTimeout(initFireworks, 300);
+        });
+    </script>
+</body>
+</html>
